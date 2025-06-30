@@ -52,6 +52,18 @@ install_neovim() {
     fi
 }
 
+# Yaziのインストール
+install_yazi() {
+    if command -v yazi &> /dev/null; then
+        log "Yazi は既にインストール済み: $(yazi --version)"
+    else
+        log "Yaziをインストール中..."
+        sudo apt-get update
+        sudo apt-get install -y yazi ffmpeg 7zip jq poppler-utils fd-find ripgrep fzf zoxide imagemagick
+        success "Yaziとその依存関係をインストールしました"
+    fi
+}
+
 # Fishのインストールとデフォルトシェル設定
 install_fish() {
     if command -v fish &> /dev/null; then
@@ -104,6 +116,7 @@ main() {
     install_nodejs
     install_claude_code
     install_neovim
+    install_yazi
     install_fish
     
     echo ""
@@ -111,6 +124,7 @@ main() {
     echo "使用方法: claude-code --help"
     echo "API キー設定: export ANTHROPIC_API_KEY='your-key'"
     echo "Neovim: nvim"
+    echo "Yazi: yazi"
     echo "注意: デフォルトシェルの変更は再ログイン後に有効になります"
 }
 
