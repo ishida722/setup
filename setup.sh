@@ -1,6 +1,8 @@
 #!/bin/bash
 
 # Claude Code セットアップスクリプト (Ubuntu用)
+# 開発ルール: 可能な限りaptなどのパッケージマネージャーを使用する
+# 例外: NeoVimはaptのバージョンが古いため、バイナリからインストール
 set -e
 
 # カラー出力
@@ -64,6 +66,18 @@ install_yazi() {
     fi
 }
 
+# Lazygitのインストール
+install_lazygit() {
+    if command -v lazygit &> /dev/null; then
+        log "Lazygit は既にインストール済み: $(lazygit --version)"
+    else
+        log "Lazygitをインストール中..."
+        sudo apt-get update
+        sudo apt-get install -y lazygit
+        success "Lazygitをインストールしました: $(lazygit --version)"
+    fi
+}
+
 # Fishのインストールとデフォルトシェル設定
 install_fish() {
     if command -v fish &> /dev/null; then
@@ -117,6 +131,7 @@ main() {
     install_claude_code
     install_neovim
     install_yazi
+    install_lazygit
     install_fish
     
     echo ""
@@ -125,6 +140,7 @@ main() {
     echo "API キー設定: export ANTHROPIC_API_KEY='your-key'"
     echo "Neovim: nvim"
     echo "Yazi: yazi"
+    echo "Lazygit: lazygit"
     echo "注意: デフォルトシェルの変更は再ログイン後に有効になります"
 }
 
