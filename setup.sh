@@ -34,7 +34,7 @@ install_claude_code() {
         log "Claude Code は既にインストール済み"
     else
         log "Claude Codeをインストール中..."
-        npm install -g @anthropic-ai/claude-code
+        sudo npm install -g @anthropic-ai/claude-code
         success "Claude Codeをインストールしました"
     fi
 }
