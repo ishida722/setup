@@ -21,6 +21,8 @@ chmod +x setup.sh
 - **Claude Code** - AnthropicのAI開発ツール（npm経由）
 - **Neovim** - GitHub ReleasesからのNeovim最新版
 - **Fish Shell** - 高機能なシェル（デフォルトシェルに設定）
+- **Yazi** - 高機能なファイルマネージャー
+- **Lazygit** - Git用のTUIツール
 - **設定ファイル** - NeovimとFishの個人設定を外部リポジトリからクローン
 
 ## 🛠️ スクリプト構成
@@ -35,29 +37,6 @@ scripts/
 ├── install-neovim.sh        # Neovim インストール
 ├── install-fish.sh          # Fish Shell インストール・設定
 └── clone-configs.sh         # 設定ファイルのクローン
-```
-
-### 個別実行
-
-各スクリプトは個別でも実行可能です：
-
-```bash
-chmod +x scripts/*.sh
-
-# Node.js のみインストール
-./scripts/install-nodejs.sh
-
-# Claude Code のみインストール
-./scripts/install-claude-code.sh
-
-# Neovim のみインストール
-./scripts/install-neovim.sh
-
-# Fish Shell のみセットアップ
-./scripts/install-fish.sh
-
-# 設定ファイルのみクローン
-./scripts/clone-configs.sh
 ```
 
 ## ⚙️ システム要件
@@ -93,51 +72,3 @@ fish
 - **Neovim設定**: [ishida722/nvim](https://github.com/ishida722/nvim) → `~/.config/nvim/`
 - **Fish設定**: [ishida722/fish](https://github.com/ishida722/fish) → `~/.config/fish/`
 
-## 🔍 トラブルシューティング
-
-### インストールが失敗する場合
-
-```bash
-# ログを確認
-tail -f /var/log/setup.log
-
-# パッケージリストを更新
-sudo apt update
-
-# 手動で再実行
-./setup.sh
-```
-
-### Claude Code が動作しない場合
-
-```bash
-# インストール確認
-claude-code --version
-
-# npm グローバルパッケージ一覧
-npm list -g --depth=0
-
-# 再インストール
-npm uninstall -g claude-code
-npm install -g claude-code
-```
-
-## 🛡️ セキュリティ注意事項
-
-- スクリプトはsudo権限でシステムファイルを変更します
-- 実行前にスクリプト内容を確認することを推奨します
-- 信頼できる環境でのみ実行してください
-
-## 📝 ログ
-
-インストール処理のログは以下に出力されます：
-- 標準出力：カラー付きのリアルタイム進捗表示
-- エラーログ：`/var/log/setup-error.log`（エラー発生時）
-
-## 🤝 貢献
-
-バグ報告や機能改善の提案は[Issues](https://github.com/ishida722/setup/issues)までお願いいたします。
-
-## 📄 ライセンス
-
-MIT License
