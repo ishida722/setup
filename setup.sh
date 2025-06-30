@@ -143,6 +143,22 @@ install_lazygit() {
     fi
 }
 
+# GitHub CLIのインストール
+install_gh() {
+    if command -v gh &> /dev/null; then
+        log "GitHub CLI は既にインストール済み: $(gh --version | head -1)"
+        return 0
+    else
+        curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg || return 1
+        sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg || return 1
+        echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null || return 1
+        sudo apt-get update || return 1
+        sudo apt-get install -y gh || return 1
+        log "GitHub CLIをインストールしました: $(gh --version | head -1)"
+        return 0
+    fi
+}
+
 # Fishのインストールとデフォルトシェル設定
 install_fish() {
     if command -v fish &> /dev/null; then
@@ -194,13 +210,14 @@ main() {
     log "Claude Code セットアップを開始..."
     
     # エラーが発生してもセットアップを続行
+    run_with_error_handling install_fish "Fishのインストール"
     run_with_error_handling clone_configs "設定ファイルのクローン"
     run_with_error_handling install_nodejs "Node.jsのインストール"
     run_with_error_handling install_claude_code "Claude Codeのインストール"
     run_with_error_handling install_neovim "Neovimのインストール"
     run_with_error_handling install_yazi "Yaziのインストール"
     run_with_error_handling install_lazygit "Lazygitのインストール"
-    run_with_error_handling install_fish "Fishのインストール"
+    run_with_error_handling install_gh "GitHub CLIのインストール"
     
     echo ""
     success "セットアップ完了！"
@@ -209,6 +226,7 @@ main() {
     echo "Neovim: nvim"
     echo "Yazi: yazi"
     echo "Lazygit: lazygit"
+    echo "GitHub CLI: gh"
     echo "注意: デフォルトシェルの変更は再ログイン後に有効になります"
 }
 
