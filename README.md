@@ -5,14 +5,7 @@
 ## 🚀 クイックスタート
 
 ```bash
-# GitHubから直接実行
 curl -fsSL https://raw.githubusercontent.com/ishida722/setup/main/setup.sh | bash
-
-# ローカルで実行
-git clone https://github.com/ishida722/setup.git
-cd setup
-chmod +x setup.sh
-./setup.sh
 ```
 
 ## 📦 インストールされるツール
