@@ -60,9 +60,50 @@ install_yazi() {
         log "Yazi は既にインストール済み: $(yazi --version)"
     else
         log "Yaziをインストール中..."
+        
+        # 必須依存関係をインストール
         sudo apt-get update
-        sudo apt-get install -y yazi ffmpeg 7zip jq poppler-utils fd-find ripgrep fzf zoxide imagemagick
-        success "Yaziとその依存関係をインストールしました"
+        sudo apt-get install -y file
+        
+        # 推奨依存関係をインストール
+        sudo apt-get install -y ffmpeg p7zip-full jq poppler-utils fd-find ripgrep fzf zoxide imagemagick xclip
+        
+        # Nerd Fontsがインストール済みか確認（推奨）
+        if ! fc-list | grep -i "nerd" &> /dev/null; then
+            log "推奨: Nerd Fontsをインストールしてください"
+        fi
+        
+        # Yaziバイナリをダウンロード
+        ARCH=$(uname -m)
+        if [ "$ARCH" = "x86_64" ]; then
+            YAZI_ARCH="x86_64-unknown-linux-gnu"
+        elif [ "$ARCH" = "aarch64" ]; then
+            YAZI_ARCH="aarch64-unknown-linux-gnu"
+        else
+            log "エラー: サポートされていないアーキテクチャ: $ARCH"
+            return 1
+        fi
+        
+        # 最新リリースのURLを取得
+        YAZI_URL=$(curl -s https://api.github.com/repos/sxyazi/yazi/releases/latest | grep "browser_download_url.*${YAZI_ARCH}.tar.gz" | cut -d '"' -f 4)
+        
+        if [ -z "$YAZI_URL" ]; then
+            log "エラー: Yaziの最新リリースURLを取得できませんでした"
+            return 1
+        fi
+        
+        # ダウンロードとインストール
+        cd /tmp
+        curl -L "$YAZI_URL" -o yazi.tar.gz
+        tar -xzf yazi.tar.gz
+        cd yazi-*
+        sudo cp yazi /usr/local/bin/
+        sudo cp ya /usr/local/bin/
+        sudo chmod +x /usr/local/bin/yazi /usr/local/bin/ya
+        cd /
+        rm -rf /tmp/yazi*
+        
+        success "Yaziとその依存関係をインストールしました: $(yazi --version)"
     fi
 }
 
