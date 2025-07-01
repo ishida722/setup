@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
@@ -11,17 +10,36 @@ import (
 	"github.com/fatih/color"
 )
 
+// InstallCommand defines installation command configuration
+type InstallCommand struct {
+	CheckCommands   []string    // List of commands to check if installed (e.g. ["node --version"])
+	InstallCommands []string    // List of commands to execute for installation
+	InstallFunc     func() error // Custom installation function (default: does nothing)
+	Name            string      // Software name (e.g. "Node.js")
+	Description     string      // Description
+}
+
+// InstallResult represents the result of an installation
+type InstallResult struct {
+	AlreadyInstalled bool   // Whether already installed
+	Success          bool   // Whether installation succeeded
+	Version          string // Installed version
+	Err              error  // Error information
+}
+
 // Logger provides colored logging functions
 type Logger struct {
 	info    *color.Color
 	success *color.Color
+	errorColor *color.Color
 }
 
 // NewLogger creates a new logger instance
 func NewLogger() *Logger {
 	return &Logger{
-		info:    color.New(color.FgBlue),
-		success: color.New(color.FgGreen),
+		info:       color.New(color.FgBlue),
+		success:    color.New(color.FgGreen),
+		errorColor: color.New(color.FgRed),
 	}
 }
 
@@ -34,6 +52,12 @@ func (l *Logger) Log(message string) {
 // Success prints a success message
 func (l *Logger) Success(message string) {
 	l.success.Print("[SUCCESS] ")
+	fmt.Println(message)
+}
+
+// Error prints an error message
+func (l *Logger) Error(message string) {
+	l.errorColor.Print("[ERROR] ")
 	fmt.Println(message)
 }
 
@@ -68,6 +92,129 @@ func (s *Setup) getCommandOutput(name string, args ...string) (string, error) {
 	cmd := exec.Command(name, args...)
 	output, err := cmd.Output()
 	return strings.TrimSpace(string(output)), err
+}
+
+// defaultInstallFunc is the default installation function that does nothing
+func defaultInstallFunc() error {
+	return nil
+}
+
+// checkInstalled checks if software is installed using check commands
+func checkInstalled(checkCmds []string) (bool, string, error) {
+	for _, cmdStr := range checkCmds {
+		parts := strings.Fields(cmdStr)
+		if len(parts) == 0 {
+			continue
+		}
+		
+		cmd := exec.Command(parts[0], parts[1:]...)
+		output, err := cmd.Output()
+		if err == nil {
+			return true, strings.TrimSpace(string(output)), nil
+		}
+	}
+	return false, "", nil
+}
+
+// runInstallCommands executes installation commands sequentially
+func runInstallCommands(installCmds []string) error {
+	for _, cmdStr := range installCmds {
+		parts := strings.Fields(cmdStr)
+		if len(parts) == 0 {
+			continue
+		}
+		
+		cmd := exec.Command(parts[0], parts[1:]...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+		if err := cmd.Run(); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// getVersion gets version from check commands
+func getVersion(checkCmds []string) (string, error) {
+	installed, version, err := checkInstalled(checkCmds)
+	if !installed || err != nil {
+		return "", err
+	}
+	return version, nil
+}
+
+// ExecuteInstall executes the installation process for a given InstallCommand
+func ExecuteInstall(cmd InstallCommand) InstallResult {
+	logger := NewLogger()
+	
+	// Check if already installed
+	installed, version, err := checkInstalled(cmd.CheckCommands)
+	if err != nil {
+		logger.Error(fmt.Sprintf("%s のインストール状態確認でエラー: %v", cmd.Name, err))
+		return InstallResult{
+			AlreadyInstalled: false,
+			Success:          false,
+			Version:          "",
+			Err:              err,
+		}
+	}
+	
+	if installed {
+		logger.Log(fmt.Sprintf("%s は既にインストール済み: %s", cmd.Name, version))
+		return InstallResult{
+			AlreadyInstalled: true,
+			Success:          true,
+			Version:          version,
+			Err:              nil,
+		}
+	}
+	
+	// Install if not installed
+	logger.Log(fmt.Sprintf("%s をインストール中...", cmd.Name))
+	
+	// Execute install commands
+	if err := runInstallCommands(cmd.InstallCommands); err != nil {
+		logger.Error(fmt.Sprintf("%s のインストールコマンド実行でエラー: %v", cmd.Name, err))
+		return InstallResult{
+			AlreadyInstalled: false,
+			Success:          false,
+			Version:          "",
+			Err:              err,
+		}
+	}
+	
+	// Execute custom install function
+	if cmd.InstallFunc != nil {
+		if err := cmd.InstallFunc(); err != nil {
+			logger.Error(fmt.Sprintf("%s のカスタムインストール処理でエラー: %v", cmd.Name, err))
+			return InstallResult{
+				AlreadyInstalled: false,
+				Success:          false,
+				Version:          "",
+				Err:              err,
+			}
+		}
+	}
+	
+	// Get version after installation
+	finalVersion, err := getVersion(cmd.CheckCommands)
+	if err != nil {
+		logger.Error(fmt.Sprintf("%s のバージョン取得でエラー: %v", cmd.Name, err))
+		return InstallResult{
+			AlreadyInstalled: false,
+			Success:          false,
+			Version:          "",
+			Err:              err,
+		}
+	}
+	
+	logger.Success(fmt.Sprintf("%s をインストールしました: %s", cmd.Name, finalVersion))
+	return InstallResult{
+		AlreadyInstalled: false,
+		Success:          true,
+		Version:          finalVersion,
+		Err:              nil,
+	}
 }
 
 // CloneConfigs clones configuration files from GitHub
@@ -257,6 +404,37 @@ func (s *Setup) Run() error {
 }
 
 func main() {
+	// Example usage of the new InstallCommand system
+	nodeCmd := InstallCommand{
+		CheckCommands:   []string{"node --version", "nodejs --version"},
+		InstallCommands: []string{
+			"curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -",
+			"sudo apt-get install -y nodejs",
+		},
+		InstallFunc:    defaultInstallFunc,
+		Name:          "Node.js",
+		Description:   "JavaScript runtime",
+	}
+	
+	claudeCmd := InstallCommand{
+		CheckCommands:   []string{"claude-code --version"},
+		InstallCommands: []string{"npm install -g @anthropic-ai/claude-code"},
+		InstallFunc:    defaultInstallFunc,
+		Name:          "Claude Code",
+		Description:   "AI-powered coding assistant",
+	}
+	
+	// Execute installations using the new system
+	fmt.Println("=== Testing New Installation System ===")
+	nodeResult := ExecuteInstall(nodeCmd)
+	claudeResult := ExecuteInstall(claudeCmd)
+	
+	fmt.Printf("Node.js Result: Success=%v, AlreadyInstalled=%v, Version=%s\n", 
+		nodeResult.Success, nodeResult.AlreadyInstalled, nodeResult.Version)
+	fmt.Printf("Claude Code Result: Success=%v, AlreadyInstalled=%v, Version=%s\n", 
+		claudeResult.Success, claudeResult.AlreadyInstalled, claudeResult.Version)
+	
+	fmt.Println("\n=== Using Legacy Setup ===")
 	setup := NewSetup()
 	if err := setup.Run(); err != nil {
 		fmt.Fprintf(os.Stderr, "エラー: %v\n", err)
