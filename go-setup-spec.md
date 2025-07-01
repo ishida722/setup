@@ -31,8 +31,9 @@ install_software() {
 ```go
 // インストールコマンド定義
 type InstallCommand struct {
-    CheckCommand   string   // インストール済み確認コマンド (例: "node --version")
-    InstallCommand string   // インストール実行コマンド
+    CheckCommands  []string // インストール済み確認コマンドリスト (例: ["node --version"])
+    InstallCommands []string // インストール実行コマンドリスト
+    InstallFunc    func() error // カスタムインストール処理関数（デフォルト: 何もしない関数）
     Name          string   // ソフトウェア名 (例: "Node.js")
     Description   string   // 説明
 }
@@ -42,7 +43,7 @@ type InstallResult struct {
     AlreadyInstalled bool    // 既にインストール済みか
     Success         bool     // インストール成功か
     Version         string   // インストール済みバージョン
-    Error          error    // エラー情報
+    Err             error    // エラー情報
 }
 ```
 
@@ -53,20 +54,23 @@ type InstallResult struct {
 func ExecuteInstall(cmd InstallCommand) InstallResult
 
 // 内部ヘルパー関数
-func checkInstalled(checkCmd string) (bool, string, error)
-func runInstallCommand(installCmd string) error
-func getVersion(checkCmd string) (string, error)
+func checkInstalled(checkCmds []string) (bool, string, error)
+func runInstallCommands(installCmds []string) error
+func getVersion(checkCmds []string) (string, error)
+func defaultInstallFunc() error { return nil } // デフォルトのInstallFunc
 ```
 
 ### 3. 主要機能仕様
 
 #### インストール済み確認
-- `checkCmd`を実行してインストール状態を判定
-- 成功時: インストール済み、バージョン情報取得
-- 失敗時: 未インストールと判定
+- `CheckCommands`リストの各コマンドを順次実行してインストール状態を判定
+- いずれかのコマンドが成功した場合: インストール済み、バージョン情報取得
+- すべてのコマンドが失敗した場合: 未インストールと判定
 
 #### インストール実行
-- 未インストール時のみ`installCmd`を実行
+- 未インストール時のみ以下を順次実行:
+  1. `InstallCommands`リストの各コマンドを順次実行
+  2. `InstallFunc`カスタム関数を実行（InstallCommandsの実行後）
 - コマンド実行結果の成功/失敗を判定
 - エラー時は適切なエラーメッセージを返却
 
@@ -87,14 +91,31 @@ func getVersion(checkCmd string) (string, error)
 ```go
 // Node.jsインストール例
 nodeCmd := InstallCommand{
-    CheckCommand:   "node --version",
-    InstallCommand: "curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash - && sudo apt-get install -y nodejs",
+    CheckCommands:   []string{"node --version", "nodejs --version"},
+    InstallCommands: []string{
+        "curl -fsSL https://deb.nodesource.com/setup_lts.x | sudo -E bash -",
+        "sudo apt-get install -y nodejs",
+    },
+    InstallFunc:    defaultInstallFunc, // デフォルト関数（何もしない）
     Name:          "Node.js",
     Description:   "JavaScript runtime",
 }
 
+// カスタム処理が必要な場合の例
+complexCmd := InstallCommand{
+    CheckCommands:   []string{"custom-tool --version"},
+    InstallCommands: []string{"sudo apt-get update"},
+    InstallFunc: func() error {
+        // 複雑なカスタムインストール処理
+        // 設定ファイル作成、権限設定など
+        return nil
+    },
+    Name:          "Custom Tool",
+    Description:   "複雑なインストール処理が必要なツール",
+}
+
 result := ExecuteInstall(nodeCmd)
-if result.Error != nil {
+if result.Err != nil {
     // エラー処理
 }
 ```
