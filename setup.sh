@@ -64,14 +64,20 @@ install_claude_code() {
 
 # Neovimのインストール
 install_neovim() {
-    if command -v nvim &> /dev/null; then
+    if command -v nvim >/dev/null 2>&1; then
         log "Neovim は既にインストール済み: $(nvim --version | head -1)"
         return 0
     else
         curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz || return 1
         sudo rm -rf /opt/nvim || return 1
         sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz || return 1
-        export PATH="$PATH:/opt/nvim-linux-x86_64/bin"
+        
+        # nvimバイナリへのシンボリックリンクを作成
+        sudo ln -sf /opt/nvim-linux-x86_64/bin/nvim /usr/local/bin/nvim || return 1
+        
+        # 一時ファイルを削除
+        rm -f nvim-linux-x86_64.tar.gz || return 1
+        
         log "neovimをインストールしました"
         return 0
     fi
@@ -79,7 +85,7 @@ install_neovim() {
 
 # Yaziのインストール
 install_yazi() {
-    if command -v yazi &> /dev/null; then
+    if command -v yazi >/dev/null 2>&1; then
         log "Yazi は既にインストール済み: $(yazi --version)"
         return 0
     else
@@ -132,7 +138,7 @@ install_yazi() {
 
 # Lazygitのインストール
 install_lazygit() {
-    if command -v lazygit &> /dev/null; then
+    if command -v lazygit >/dev/null 2>&1; then
         log "Lazygit は既にインストール済み: $(lazygit --version)"
         return 0
     else
@@ -201,6 +207,14 @@ clone_configs() {
     else
         git clone https://github.com/ishida722/fish ~/.config/fish || return 1
         log "Fish設定をクローンしました"
+    fi
+    
+    # Krapp設定
+    if [ -d ~/.config/krapp ]; then
+        log "Krapp設定は既に存在します"
+    else
+        git clone https://github.com/ishida722/krapp-config ~/.config/krapp || return 1
+        log "Krapp設定をクローンしました"
     fi
     return 0
 }
