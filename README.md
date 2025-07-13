@@ -4,8 +4,25 @@
 
 ## 🚀 クイックスタート
 
+### Bashスクリプト版
+
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ishida722/setup/main/setup.sh | bash
+```
+
+### Ansible Playbook版
+
+```bash
+# Ansibleのインストール
+sudo apt update
+sudo apt install -y ansible
+
+# リポジトリのクローン
+git clone https://github.com/ishida722/setup.git
+cd setup
+
+# Playbookの実行
+ansible-playbook playbook.yml
 ```
 
 ## 📦 インストールされるツール
@@ -18,19 +35,27 @@ curl -fsSL https://raw.githubusercontent.com/ishida722/setup/main/setup.sh | bas
 - **Lazygit** - Git用のTUIツール
 - **設定ファイル** - NeovimとFishの個人設定を外部リポジトリからクローン
 
-## 🛠️ スクリプト構成
-
-メインの`setup.sh`からモジュール化されたスクリプトを呼び出します：
+## 🛠️ ファイル構成
 
 ```
-scripts/
-├── utils.sh                 # 共通ユーティリティ（ログ出力、色設定）
-├── install-nodejs.sh        # Node.js LTS インストール
-├── install-claude-code.sh   # Claude Code インストール
-├── install-neovim.sh        # Neovim インストール
-├── install-fish.sh          # Fish Shell インストール・設定
-└── clone-configs.sh         # 設定ファイルのクローン
+.
+├── setup.sh          # Bashスクリプト版（従来の方法）
+├── playbook.yml       # Ansible Playbook版（推奨）
+└── README.md          # このファイル
 ```
+
+## 🔄 Ansible vs Bashスクリプト
+
+| 特徴 | Ansible Playbook | Bashスクリプト |
+|------|------------------|----------------|
+| **冪等性** | ✅ 自動保証 | ⚠️ 手動実装 |
+| **エラーハンドリング** | ✅ 高機能 | ⚠️ 基本的 |
+| **再実行安全性** | ✅ 完全対応 | ⚠️ 条件分岐で対応 |
+| **保守性** | ✅ 宣言的 | ⚠️ 手続き型 |
+| **学習コスト** | ⚠️ 中程度 | ✅ 低い |
+| **依存関係** | ⚠️ Ansible必要 | ✅ bash標準 |
+
+**推奨**: 開発環境では冪等性と安全性の高いAnsible Playbook版を使用
 
 ## ⚙️ システム要件
 
@@ -58,10 +83,45 @@ source ~/.bashrc
 fish
 ```
 
+## 🎯 Ansible Playbookの特徴
+
+### 冪等性
+- 何度実行しても同じ結果
+- 既にインストール済みのツールはスキップ
+- 設定ファイルが存在する場合は上書きしない
+
+### タスク実行例
+```bash
+# 詳細出力で実行
+ansible-playbook playbook.yml -v
+
+# 特定のタスクのみ実行（例：Yaziのインストールをスキップ）
+ansible-playbook playbook.yml --skip-tags yazi
+
+# ドライラン（実際の変更なし）
+ansible-playbook playbook.yml --check
+```
+
 ## 📁 外部設定リポジトリ
 
 以下の設定ファイルが自動でクローンされます：
 
 - **Neovim設定**: [ishida722/nvim](https://github.com/ishida722/nvim) → `~/.config/nvim/`
 - **Fish設定**: [ishida722/fish](https://github.com/ishida722/fish) → `~/.config/fish/`
+- **Krapp設定**: [ishida722/krapp-config](https://github.com/ishida722/krapp-config) → `~/.config/krapp/`
+
+## 🐛 トラブルシューティング
+
+### Ansible Playbook版
+
+```bash
+# Python3とpipが必要
+sudo apt install -y python3-pip
+
+# Ansibleのアップデート
+pip3 install --upgrade ansible
+
+# 権限エラーの場合
+sudo ansible-playbook playbook.yml
+```
 

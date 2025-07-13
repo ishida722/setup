@@ -1,0 +1,190 @@
+---
+- name: Claude Code セットアップ (Ubuntu用)
+  hosts: localhost
+  connection: local
+  become: yes
+  vars:
+    user_home: "{{ ansible_env.HOME }}"
+    user_name: "{{ ansible_env.USER }}"
+
+  tasks:
+
+    - name: Install basic dependencies and Fish shell
+      apt:
+        name:
+          - curl
+          - git
+          - file
+          - fish
+        state: present
+        update_cache: yes
+
+    - name: Change default shell to Fish
+      user:
+        name: "{{ user_name }}"
+        shell: /usr/bin/fish
+
+    - name: Create .config directory
+      file:
+        path: "{{ user_home }}/.config"
+        state: directory
+        owner: "{{ user_name }}"
+        group: "{{ user_name }}"
+        mode: '0755'
+      become: no
+
+    - name: Clone Neovim configuration
+      git:
+        repo: https://github.com/ishida722/nvim
+        dest: "{{ user_home }}/.config/nvim"
+        force: no
+      become: no
+      ignore_errors: yes
+
+    - name: Clone Fish configuration
+      git:
+        repo: https://github.com/ishida722/fish
+        dest: "{{ user_home }}/.config/fish"
+        force: no
+      become: no
+      ignore_errors: yes
+
+    - name: Clone Krapp configuration
+      git:
+        repo: https://github.com/ishida722/krapp-config
+        dest: "{{ user_home }}/.config/krapp"
+        force: no
+      become: no
+      ignore_errors: yes
+
+    - name: Add Node.js LTS repository
+      shell: curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
+      creates: /etc/apt/sources.list.d/nodesource.list
+
+    - name: Install Node.js
+      apt:
+        name: nodejs
+        state: present
+
+    - name: Install Claude Code
+      npm:
+        name: "@anthropic-ai/claude-code"
+        global: yes
+
+    - name: Download and install Neovim
+      unarchive:
+        src: https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+        dest: /opt
+        remote_src: yes
+        creates: /opt/nvim-linux-x86_64
+        owner: root
+        group: root
+
+    - name: Create Neovim symlink
+      file:
+        src: /opt/nvim-linux-x86_64/bin/nvim
+        dest: /usr/local/bin/nvim
+        state: link
+        force: yes
+
+    - name: Install Yazi dependencies
+      apt:
+        name:
+          - ffmpeg
+          - p7zip-full
+          - jq
+          - poppler-utils
+          - fd-find
+          - ripgrep
+          - fzf
+          - zoxide
+          - imagemagick
+          - xclip
+        state: present
+
+    - name: Set Yazi architecture
+      set_fact:
+        yazi_arch: "{{ 'x86_64-unknown-linux-gnu' if ansible_architecture == 'x86_64' else 'aarch64-unknown-linux-gnu' if ansible_architecture == 'aarch64' else 'unsupported' }}"
+
+    - name: Fail if architecture is unsupported
+      fail:
+        msg: "Unsupported architecture: {{ ansible_architecture }}"
+      when: yazi_arch == 'unsupported'
+
+    - name: Get Yazi latest release URL
+      uri:
+        url: https://api.github.com/repos/sxyazi/yazi/releases/latest
+        method: GET
+        return_content: yes
+      register: yazi_release_info
+
+    - name: Extract Yazi download URL
+      set_fact:
+        yazi_download_url: "{{ item.browser_download_url }}"
+      loop: "{{ yazi_release_info.json.assets }}"
+      when: yazi_arch in item.name and item.name.endswith('.tar.gz')
+
+    - name: Download and extract Yazi
+      unarchive:
+        src: "{{ yazi_download_url }}"
+        dest: /tmp
+        remote_src: yes
+        creates: /usr/local/bin/yazi
+
+    - name: Find Yazi extracted directory
+      find:
+        paths: /tmp
+        patterns: "yazi-*"
+        file_type: directory
+      register: yazi_dirs
+
+    - name: Install Yazi binaries
+      copy:
+        src: "{{ yazi_dirs.files[0].path }}/{{ item }}"
+        dest: "/usr/local/bin/{{ item }}"
+        mode: '0755'
+        remote_src: yes
+      loop:
+        - yazi
+        - ya
+      when: yazi_dirs.files | length > 0
+
+    - name: Clean up Yazi download
+      file:
+        path: "{{ yazi_dirs.files[0].path }}"
+        state: absent
+      when: yazi_dirs.files | length > 0
+
+    - name: Install Lazygit
+      apt:
+        name: lazygit
+        state: present
+
+    - name: Add GitHub CLI repository key
+      get_url:
+        url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
+        dest: /usr/share/keyrings/githubcli-archive-keyring.gpg
+        mode: '0644'
+
+    - name: Add GitHub CLI repository
+      apt_repository:
+        repo: "deb [arch={{ ansible_architecture }} signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main"
+        state: present
+        filename: github-cli
+
+    - name: Install GitHub CLI
+      apt:
+        name: gh
+        state: present
+
+    - name: Display completion message
+      debug:
+        msg: |
+          セットアップ完了！
+          使用方法: claude-code --help
+          API キー設定: export ANTHROPIC_API_KEY='your-key'
+          Neovim: nvim
+          Yazi: yazi
+          Lazygit: lazygit
+          GitHub CLI: gh
+          注意: デフォルトシェルの変更は再ログイン後に有効になります
