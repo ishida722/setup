@@ -17,12 +17,8 @@ curl -fsSL https://raw.githubusercontent.com/ishida722/setup/main/setup.sh | bas
 sudo apt update
 sudo apt install -y ansible
 
-# リポジトリのクローン
-git clone https://github.com/ishida722/setup.git
-cd setup
-
-# Playbookの実行
-ansible-playbook playbook.yml
+# Playbookの直接実行
+curl -fsSL https://raw.githubusercontent.com/ishida722/setup/main/playbook.yml | ansible-playbook /dev/stdin
 ```
 
 ## 📦 インストールされるツール
