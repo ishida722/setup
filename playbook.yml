@@ -137,7 +137,7 @@
       set_fact:
         yazi_download_url: "{{ item.browser_download_url }}"
       loop: "{{ yazi_release_info.json.assets }}"
-      when: yazi_arch in item.name and item.name.endswith('.tar.gz')
+      when: yazi_arch in item.name and item.name.endswith('.zip')
 
     - name: Check if Yazi download URL was found
       fail:
@@ -152,10 +152,10 @@
         creates: /usr/local/bin/yazi
       when: yazi_download_url is defined
 
-    - name: Find Yazi extracted directory
+    - name: Find Yazi binaries
       find:
         paths: /tmp
-        patterns: "yazi-*"
+        patterns: "yazi-{{ yazi_arch }}"
         file_type: directory
       register: yazi_dirs
 
@@ -168,13 +168,13 @@
       loop:
         - yazi
         - ya
-      when: yazi_dirs.files | length > 0
+      when: yazi_dirs.files | length > 0 and yazi_download_url is defined
 
-    - name: Clean up Yazi download
+    - name: Clean up Yazi extraction
       file:
         path: "{{ yazi_dirs.files[0].path }}"
         state: absent
-      when: yazi_dirs.files | length > 0
+      when: yazi_dirs.files | length > 0 and yazi_download_url is defined
 
     - name: Install Lazygit
       apt:
