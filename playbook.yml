@@ -104,9 +104,17 @@
           - xclip
         state: present
 
+    - name: Debug architecture info
+      debug:
+        msg: "Detected architecture: {{ ansible_architecture }}"
+
     - name: Set Yazi architecture
       set_fact:
         yazi_arch: "{{ 'x86_64-unknown-linux-gnu' if ansible_architecture == 'x86_64' else 'aarch64-unknown-linux-gnu' if ansible_architecture == 'aarch64' else 'unsupported' }}"
+
+    - name: Debug Yazi architecture
+      debug:
+        msg: "Yazi architecture string: {{ yazi_arch }}"
 
     - name: Fail if architecture is unsupported
       fail:
@@ -120,11 +128,21 @@
         return_content: yes
       register: yazi_release_info
 
+    - name: Debug available assets
+      debug:
+        msg: "Available asset: {{ item.name }}"
+      loop: "{{ yazi_release_info.json.assets }}"
+
     - name: Extract Yazi download URL
       set_fact:
         yazi_download_url: "{{ item.browser_download_url }}"
       loop: "{{ yazi_release_info.json.assets }}"
       when: yazi_arch in item.name and item.name.endswith('.tar.gz')
+
+    - name: Check if Yazi download URL was found
+      fail:
+        msg: "Could not find Yazi download URL for architecture {{ yazi_arch }}"
+      when: yazi_download_url is not defined
 
     - name: Download and extract Yazi
       unarchive:
@@ -132,6 +150,7 @@
         dest: /tmp
         remote_src: yes
         creates: /usr/local/bin/yazi
+      when: yazi_download_url is defined
 
     - name: Find Yazi extracted directory
       find:
