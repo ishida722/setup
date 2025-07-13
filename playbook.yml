@@ -176,11 +176,6 @@
         state: absent
       when: yazi_dirs.files | length > 0 and yazi_download_url is defined
 
-    - name: Install Lazygit
-      apt:
-        name: lazygit
-        state: present
-
     - name: Add GitHub CLI repository key
       get_url:
         url: https://cli.github.com/packages/githubcli-archive-keyring.gpg
@@ -206,6 +201,5 @@
           API キー設定: export ANTHROPIC_API_KEY='your-key'
           Neovim: nvim
           Yazi: yazi
-          Lazygit: lazygit
           GitHub CLI: gh
           注意: デフォルトシェルの変更は再ログイン後に有効になります
