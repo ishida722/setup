@@ -4,8 +4,8 @@
   connection: local
   become: yes
   vars:
-    user_home: "{{ ansible_env.HOME }}"
-    user_name: "{{ ansible_env.USER }}"
+    actual_user: "{{ ansible_env.SUDO_USER | default(ansible_user_id) }}"
+    user_home: "/home/{{ actual_user }}"
 
   tasks:
 
@@ -21,24 +21,23 @@
 
     - name: Change default shell to Fish
       user:
-        name: "{{ user_name }}"
+        name: "{{ actual_user }}"
         shell: /usr/bin/fish
 
     - name: Create .config directory
       file:
         path: "{{ user_home }}/.config"
         state: directory
-        owner: "{{ user_name }}"
-        group: "{{ user_name }}"
+        owner: "{{ actual_user }}"
+        group: "{{ actual_user }}"
         mode: '0755'
-      become: no
 
     - name: Clone Neovim configuration
       git:
         repo: https://github.com/ishida722/nvim
         dest: "{{ user_home }}/.config/nvim"
         force: no
-      become: no
+      become_user: "{{ actual_user }}"
       ignore_errors: yes
 
     - name: Clone Fish configuration
@@ -46,7 +45,7 @@
         repo: https://github.com/ishida722/fish
         dest: "{{ user_home }}/.config/fish"
         force: no
-      become: no
+      become_user: "{{ actual_user }}"
       ignore_errors: yes
 
     - name: Clone Krapp configuration
@@ -54,7 +53,7 @@
         repo: https://github.com/ishida722/krapp-config
         dest: "{{ user_home }}/.config/krapp"
         force: no
-      become: no
+      become_user: "{{ actual_user }}"
       ignore_errors: yes
 
     - name: Add Node.js LTS repository
