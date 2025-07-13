@@ -59,7 +59,8 @@
 
     - name: Add Node.js LTS repository
       shell: curl -fsSL https://deb.nodesource.com/setup_lts.x | bash -
-      creates: /etc/apt/sources.list.d/nodesource.list
+      args:
+        creates: /etc/apt/sources.list.d/nodesource.list
 
     - name: Install Node.js
       apt:
