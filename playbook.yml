@@ -193,6 +193,30 @@
         name: gh
         state: present
 
+    - name: Install Deno
+      shell: curl -fsSL https://deno.land/install.sh | sh
+      args:
+        creates: "{{ user_home }}/.deno/bin/deno"
+      become_user: "{{ actual_user }}"
+      environment:
+        HOME: "{{ user_home }}"
+
+    - name: Create SKK directory
+      file:
+        path: "{{ user_home }}/.skk"
+        state: directory
+        owner: "{{ actual_user }}"
+        group: "{{ actual_user }}"
+        mode: '0755'
+
+    - name: Download SKK dictionary
+      get_url:
+        url: https://raw.githubusercontent.com/skk-dev/dict/master/SKK-JISYO.L
+        dest: "{{ user_home }}/.skk/SKK-JISYO.L"
+        owner: "{{ actual_user }}"
+        group: "{{ actual_user }}"
+        mode: '0644'
+
     - name: Display completion message
       debug:
         msg: |
@@ -202,4 +226,6 @@
           Neovim: nvim
           Yazi: yazi
           GitHub CLI: gh
+          Deno: ~/.deno/bin/deno
+          SKK辞書: ~/.skk/SKK-JISYO.L
           注意: デフォルトシェルの変更は再ログイン後に有効になります
