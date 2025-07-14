@@ -10,34 +10,47 @@
 curl -fsSL https://raw.githubusercontent.com/ishida722/setup/main/setup.sh | bash
 ```
 
-### Ansible Playbook版
+### Ansible Playbook版（推奨）
 
 ```bash
 # Ansibleのインストール
 sudo apt update
 sudo apt install -y ansible
 
-# Playbookの直接実行
-curl -fsSL https://raw.githubusercontent.com/ishida722/setup/main/playbook.yml | ansible-playbook /dev/stdin
+# Playbookをダウンロードして実行（推奨）
+wget https://raw.githubusercontent.com/ishida722/setup/main/playbook.yml
+ansible-playbook playbook.yml --ask-become-pass
 ```
+
+**なぜこの方法が推奨されるのか：**
+- プレイブックの内容を事前に確認できるため安全
+- sudo権限が必要な場合にパスワードを適切に入力できる
+- エラー時のデバッグが容易
 
 ## 📦 インストールされるツール
 
 - **Node.js LTS** - NodeSourceリポジトリからの最新LTS版
 - **Claude Code** - AnthropicのAI開発ツール（npm経由）
+- **Go** - 公式リリースからの最新版
+- **krapp-go** - ノート管理CLIツール（Go製）
 - **Neovim** - GitHub ReleasesからのNeovim最新版
 - **Fish Shell** - 高機能なシェル（デフォルトシェルに設定）
 - **Yazi** - 高機能なファイルマネージャー
-- **Lazygit** - Git用のTUIツール
-- **設定ファイル** - NeovimとFishの個人設定を外部リポジトリからクローン
+- **GitHub CLI** - GitHubの公式CLIツール
+- **Deno** - TypeScript/JavaScriptランタイム
+- **SKK辞書** - 日本語入力用辞書ファイル
+- **設定ファイル** - Neovim、Fish、Krappの個人設定を外部リポジトリからクローン
 
 ## 🛠️ ファイル構成
 
 ```
 .
-├── setup.sh          # Bashスクリプト版（従来の方法）
-├── playbook.yml       # Ansible Playbook版（推奨）
-└── README.md          # このファイル
+├── setup.sh               # Bashスクリプト版（従来の方法）
+├── playbook.yml           # Ansible Playbook版（推奨）
+├── docs/
+│   └── troubleshooting.md # 日本語トラブルシューティングガイド
+├── CLAUDE.md              # Claude Code用の技術文書
+└── README.md              # このファイル
 ```
 
 ## 🔄 Ansible vs Bashスクリプト
@@ -108,7 +121,27 @@ ansible-playbook playbook.yml --check
 
 ## 🐛 トラブルシューティング
 
-### Ansible Playbook版
+### よくある問題と解決方法
+
+**権限エラー（パスワードが必要です）**
+```bash
+# --ask-become-passオプションを使用
+ansible-playbook playbook.yml --ask-become-pass
+```
+
+**aptキャッシュ更新エラー**
+```bash
+# 手動でapt updateを実行してエラーを確認
+sudo apt update
+
+# Steam等のGPGキーエラーの場合は docs/troubleshooting.md を参照
+```
+
+**詳細なトラブルシューティング**
+- 日本語版: [docs/troubleshooting.md](docs/troubleshooting.md)
+- 技術詳細: [CLAUDE.md](CLAUDE.md#troubleshooting)
+
+### その他
 
 ```bash
 # Python3とpipが必要
@@ -117,7 +150,7 @@ sudo apt install -y python3-pip
 # Ansibleのアップデート
 pip3 install --upgrade ansible
 
-# 権限エラーの場合
-sudo ansible-playbook playbook.yml
+# 詳細出力で実行
+ansible-playbook playbook.yml -v --ask-become-pass
 ```
 

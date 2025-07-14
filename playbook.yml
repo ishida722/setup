@@ -202,30 +202,17 @@
         HOME: "{{ user_home }}"
 
     - name: Install Go language
-      shell: |
-        cd /tmp
-        GO_VERSION=$(curl -s https://go.dev/VERSION?m=text)
-        wget https://go.dev/dl/${GO_VERSION}.linux-amd64.tar.gz
-        sudo rm -rf /usr/local/go
-        sudo tar -C /usr/local -xzf ${GO_VERSION}.linux-amd64.tar.gz
-      args:
-        creates: /usr/local/go/bin/go
-
-    - name: Add Go to PATH for all users
-      lineinfile:
-        path: /etc/environment
-        line: 'PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/usr/local/go/bin"'
-        regexp: '^PATH='
+      apt:
+        name: golang-go
         state: present
 
     - name: Install krapp-go
-      shell: /usr/local/go/bin/go install github.com/ishida722/krapp-go/cmd/krapp@HEAD
+      shell: go install github.com/ishida722/krapp-go/cmd/krapp@HEAD
       args:
         creates: "{{ user_home }}/go/bin/krapp"
       become_user: "{{ actual_user }}"
       environment:
         HOME: "{{ user_home }}"
-        PATH: "{{ ansible_env.PATH }}:/usr/local/go/bin"
 
     - name: Create SKK directory
       file:
@@ -253,7 +240,7 @@
           Yazi: yazi
           GitHub CLI: gh
           Deno: ~/.deno/bin/deno
-          Go: /usr/local/go/bin/go
+          Go: /usr/bin/go
           krapp: ~/go/bin/krapp
           SKK辞書: ~/.skk/SKK-JISYO.L
           注意: デフォルトシェルの変更は再ログイン後に有効になります
