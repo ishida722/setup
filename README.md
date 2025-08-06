@@ -4,14 +4,6 @@
 
 ## 🚀 クイックスタート
 
-### Bashスクリプト版
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/ishida722/setup/main/setup.sh | bash
-```
-
-### Ansible Playbook版（推奨）
-
 ```bash
 # Ansibleのインストール
 sudo apt update
@@ -21,11 +13,6 @@ sudo apt install -y ansible
 wget https://raw.githubusercontent.com/ishida722/setup/main/playbook.yml
 ansible-playbook playbook.yml --ask-become-pass
 ```
-
-**なぜこの方法が推奨されるのか：**
-- プレイブックの内容を事前に確認できるため安全
-- sudo権限が必要な場合にパスワードを適切に入力できる
-- エラー時のデバッグが容易
 
 ## 📦 インストールされるツール
 
